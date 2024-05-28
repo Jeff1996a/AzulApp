@@ -4,9 +4,10 @@ from tkinter.messagebox import askyesno
 from Cliente.FrmActualizarCliente import ActualizarCliente
 from Cliente.FrmListadoClientes import ListadoClientes
 from Cliente.FrmRegistrarCliente import RegistrarCliente
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from PIL import ImageTk, Image
 from time import strftime
+from datetime import date, datetime
 
 from Gastos.FrmRegistroGastos import FrmRegistroGastos
 from Model.Usuario import Usuario
@@ -17,6 +18,7 @@ from Producto.FrmInventarioProductos import FrmInventarioProductos
 from RegistroDiario.FrmRegistroPagos import FrmRegistroPagos
 from Ropa.FrmInventarioRopa import FrmInventarioPrendas
 from TipoPrenda.FrmCatalogoPrendas import FrmCatalogoPrendas
+from dbConnection import dbConnection
 
 
 class MenuPrincipal(tk.Toplevel):
@@ -26,6 +28,10 @@ class MenuPrincipal(tk.Toplevel):
         super().__init__()
 
         self.datos_usuario = datos_usuario
+
+        # Conexión a la base de datos Azul lavandería
+        self.db = dbConnection()
+        self.cnx = self.db.cnx
 
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=20, pady=5)
@@ -224,7 +230,7 @@ class MenuPrincipal(tk.Toplevel):
 
         self.button_viewInventario = ttk.Button(
             self.container3,
-            text="VER INVENTARIO",
+            text="INVENTARIO PRODUCTOS",
             command=self.inventario_productos,
             width=28,
             image=self.img3,
@@ -284,9 +290,73 @@ class MenuPrincipal(tk.Toplevel):
         frm_inventario = FrmInventarioProductos(self.datos_usuario)
 
     def cerrar_sesion(self):
-        answer = askyesno(title='confirmation',
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        answer = askyesno(title='Cerrar sesión',
                           message='¿Desea cerrar la caja?')
         if answer:
+            if cnx.is_connected():
+                cursor = cnx.cursor()
+
+                # Obtener el total de las ordenes generadas en el día
+                args = [datetime.now()]
+                cursor.callproc('spTotalizarVentas', args)
+
+                response = []
+
+                for result in cursor.stored_results():
+                    response = result.fetchall()
+                    print(response)
+
+                cnx.commit()
+
+                total_ventas = response[0][0]
+
+                print('TOTAL GENERADO: ' + str(total_ventas))
+
+                # Obtener el total de las importes ingresados en el día
+                cursor.callproc('spTotalizarImportes', args)
+
+                response = []
+
+                for result in cursor.stored_results():
+                    response = result.fetchall()
+                    print(response)
+
+                total_importes = response[0][0]
+
+                print('TOTAL IMPORTES: ' + str(total_importes))
+
+                # Obtener el total de los gastos ingresados en el día
+                cursor.callproc('spTotalizarGastos', args)
+
+                response = []
+
+                for result in cursor.stored_results():
+                    response = result.fetchall()
+                    print(response)
+
+                total_gastos = response[0][0]
+
+                print('TOTAL GASTOS: ' + str(total_gastos))
+
+                # Registrar el cierre de sesión
+                datos_cierre = [self.datos_usuario.id_caja, datetime.now(), total_ventas,
+                                total_importes, total_gastos]
+
+                cursor.callproc('spRegistrarCierreCaja', datos_cierre)
+
+                cnx.commit()
+
+                if cursor.rowcount != 0:
+                    print('.....REGISTRO DE CIERRE EXITOSO......!!!')
+
+            else:
+                print('No se pudo conectar a la BD')
+
             self.master.deiconify()
             self.destroy()
 

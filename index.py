@@ -73,7 +73,7 @@ class App(tk.Frame):
 
         self.user_data = []
 
-        if (cnx.is_connected):
+        if cnx.is_connected():
             print("server connected")
             cursor = cnx.cursor()
 
@@ -126,9 +126,11 @@ class App(tk.Frame):
                     self.password.set('')
                     self.alerta.set('')
 
+                    cursor.close()
+                    cnx.close()
+
                 else:
                     self.alerta.set('Usuario o contraseña inconrrecta')
-                    print("Usuario o contraseña incorrecta")
                     print("Usuario o contraseña incorrecta")
             except IndexError:
                 self.alerta.set('Usuario o contraseña inconrrecta')
@@ -139,7 +141,7 @@ class App(tk.Frame):
 root = tk.Tk()
 myapp = App(root)
 myapp.master.title('Azul Lavandería')
-myapp.master.minsize(380,300)
+myapp.master.minsize(380, 300)
 myapp.master.anchor('n')
 myapp.master.mainloop()
 

@@ -13,11 +13,6 @@ class ListadoClientes(tk.Toplevel):
 
         self.datos_usuario = datos_usuario
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-
-        self.cnx = self.db.cnx
-
         self.user_data = []
 
         self.clientes_registrados = []
@@ -46,29 +41,12 @@ class ListadoClientes(tk.Toplevel):
         self.contenedor_buscar = tk.Frame(self.frm_lista_clientes)
         self.contenedor_buscar.pack(fill='both', side='top', pady=2)
 
-        self.lblBuscar = ttk.Label(self.contenedor_buscar, text='Cédula o pasaporte:', font=('Courier', 10), foreground='gray')
+        self.lblBuscar = ttk.Label(self.contenedor_buscar, text='Buscar cliente:', font=('Courier', 10), foreground='gray')
         self.lblBuscar.pack(side='left', anchor='nw', padx=5, pady=2)
 
         self.txtBuscar = ttk.Entry(self.contenedor_buscar, width=35)
         self.txtBuscar.pack(side='left', anchor='nw', ipadx=0, ipady=0, padx=0, pady=2)
-        self.txtBuscar.bind('<Key>', self.buscar_cliente)
 
-        # Create an object of tkinter ImageTk
-        self.readImg = Image.open("Img/search.png")
-        self.newImg = self.readImg.resize((15, 15))
-        self.img = ImageTk.PhotoImage(self.newImg)
-
-        # Botón para guardar los datos
-        self.buscar_button = ttk.Button(
-            self.contenedor_buscar,
-            command=self.buscar_cliente,
-            image=self.img,
-            compound='right',
-            width=3,
-        )
-        self.buscar_button.pack(side='left', anchor='center', ipadx=0, ipady=0, padx=2, pady=0)
-
-        self.buscar_button.bind('<Button>', self.buscar_cliente)
 
         # contenedor lista de prendas
         self.encabezado = ('#1', '#2', '#3', '#4', '#5', '#6')
@@ -129,6 +107,8 @@ class ListadoClientes(tk.Toplevel):
         # Tell the entry widget to watch this variable.
         self.txtBuscar["textvariable"] = self.buscar
 
+        self.buscar.trace('w', self.buscar_cliente)
+
         self.focus()
 
         self.grab_set()
@@ -136,11 +116,20 @@ class ListadoClientes(tk.Toplevel):
     # Funcion para obtener la lista de clientes
     def obtener_clientes(self):
 
-        if self.cnx.is_connected():
+        # Limpiar la tabla
+        for i in self.tabla_clientes.get_children():
+            self.tabla_clientes.delete(i)
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             print("Esperando para enviar datos")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spClientesRegistrados')
@@ -158,14 +147,22 @@ class ListadoClientes(tk.Toplevel):
                                            values=cliente)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             print(cursor.lastrowid)
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")
 
-    def buscar_cliente(self,event):
+    def buscar_cliente(self, *args):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
 
         texto_busqueda = self.buscar.get()
 
@@ -178,11 +175,11 @@ class ListadoClientes(tk.Toplevel):
             for i in self.tabla_clientes.get_children():
                 self.tabla_clientes.delete(i)
 
-            if self.cnx.is_connected():
+            if cnx.is_connected():
 
                 print("Esperando para enviar datos")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 # To pass the input Arguments create a list and pass it
@@ -200,7 +197,10 @@ class ListadoClientes(tk.Toplevel):
                                                values=cliente)
 
                 # Ejecutar el proceso almacenadoe
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
 
             else:
                 print("Connection failure")

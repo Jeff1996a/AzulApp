@@ -175,6 +175,9 @@ class RegistrarCliente(tk.Toplevel):
                                     title='Registro completo')
                 self.destroy()
 
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 

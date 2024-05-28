@@ -9,10 +9,6 @@ class FrmAgregarProducto(tk.Toplevel):
         super().__init__()
         self.datos_usuario = datos_usuario
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
-
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=20, pady=5)
 
@@ -147,10 +143,14 @@ class FrmAgregarProducto(tk.Toplevel):
 
     def agregar_producto(self):
 
-        if self.cnx.is_connected():
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             print("Esperando para enviar datos")
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a client
             producto = [self.descripcion.get(), self.cantidad.get(), self.opcion.get(), self.precio.get(),
@@ -167,7 +167,7 @@ class FrmAgregarProducto(tk.Toplevel):
             id_procucto = result[0]
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if id_procucto == 0:
                 messagebox.showerror(message='EL PRODUCTO YA EXISTE EN INVENTARIO',
@@ -180,6 +180,9 @@ class FrmAgregarProducto(tk.Toplevel):
                 self.opcion.set(0)
                 self.precio.set(0)
                 self.observacion.set('')
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")

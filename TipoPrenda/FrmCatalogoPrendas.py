@@ -48,7 +48,7 @@ class FrmCatalogoPrendas(tk.Toplevel):
         self.txt_descripcion = ttk.Entry(self.frm_agregar_prenda, width=40, textvariable=self.descripcion_prenda)
         self.txt_descripcion.grid(row=0, column=1, padx=5, pady=0)
 
-        self.descripcion_prenda.trace('w', self.upper_descripcion())
+        self.descripcion_prenda.trace('w', self.upper_descripcion)
 
         # Botón agregar tipo de prenda
         # Create an object of tkinter ImageTk

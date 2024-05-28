@@ -13,11 +13,6 @@ class ActualizarCliente(tk.Toplevel):
 
         self.datos_usuario = datos_usuario
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-
-        self.cnx = self.db.cnx
-
         self.user_data = []
 
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
@@ -171,7 +166,7 @@ class ActualizarCliente(tk.Toplevel):
 
         cnx = db.cnx
 
-        if (cnx.is_connected()):
+        if cnx.is_connected():
             print("Esperando para enviar datos")
             cursor = cnx.cursor()
 
@@ -188,18 +183,26 @@ class ActualizarCliente(tk.Toplevel):
 
             print(cursor.lastrowid)
 
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 
     def buscar_cliente(self, event):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
+
         self.clientes_registrados = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("Esperando para enviar datos")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             # To pass the input Arguments create a list and pass it
@@ -233,7 +236,10 @@ class ActualizarCliente(tk.Toplevel):
                 self.cedula.set(self.cliente_encontrado[5])
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")

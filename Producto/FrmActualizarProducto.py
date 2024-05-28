@@ -182,10 +182,14 @@ class FrmActualizarProducto(tk.Toplevel):
 
     def actualizar_producto(self):
 
-        if self.cnx.is_connected():
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        if cnx.is_connected():
             print(".....ACTUALIZANDO DATOS PRODUCTO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a list and pass it
             args = [self.id_producto.get(), self.descripcion.get(), self.cantidad.get(), self.opcion.get(),
@@ -197,11 +201,13 @@ class FrmActualizarProducto(tk.Toplevel):
                 print(response)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if cursor.rowcount != 0:
                 messagebox.showinfo(message='PRODUCTO ACTUALIZADO CORRECTAMENTE!!', title='Entregar pedido')
                 self.destroy()
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 

@@ -7,6 +7,7 @@ from datetime import date
 
 from dbConnection import dbConnection
 
+
 class NuevaOrden(tk.Toplevel):
 
     def __init__(self, datos_usuario):
@@ -31,11 +32,6 @@ class NuevaOrden(tk.Toplevel):
 
         # Variable para llevar el pago general de la orden
         self.total_pagar = 0.0
-
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-
-        self.cnx = self.db.cnx
 
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=10, pady=0)
@@ -273,7 +269,7 @@ class NuevaOrden(tk.Toplevel):
 
         self.txt_observacion['textvariable'] = self.observacion
 
-        self.cantidad.set('')
+        self.cantidad.set(0)
 
         # Botón para agregar prendas
         self.btn_agregar_prenda = ttk.Button(
@@ -414,7 +410,7 @@ class NuevaOrden(tk.Toplevel):
         self.cancelar_registro.pack(side='right', anchor='center', padx=10, pady=5, ipadx=5, ipady=3)
 
         # Variables datos del cliente
-        self.idCliente = tk.StringVar()
+        self.idCliente = tk.IntVar()
         self.cedula = tk.StringVar()
         self.nombres = tk.StringVar()
         self.direccion = tk.StringVar()
@@ -460,11 +456,16 @@ class NuevaOrden(tk.Toplevel):
 
         self.clientes_registrados = []
 
-        if self.cnx.is_connected():
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             print("Esperando para enviar datos")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             # To pass the input Arguments create a list and pass it
@@ -492,21 +493,28 @@ class NuevaOrden(tk.Toplevel):
             self.cedula.set(self.cliente_encontrado[5])
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")
 
     # Función para obtener la lista de prendas
     def obtener_prendas(self):
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
 
         lista_prendas = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("Esperando para obtener prendas")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spObtenerPrendas')
@@ -523,9 +531,11 @@ class NuevaOrden(tk.Toplevel):
                 self.prendas.append(prenda)
             print(self.prendas)
 
-
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")
@@ -533,13 +543,18 @@ class NuevaOrden(tk.Toplevel):
     # Función para obtener el tipo de servicio
     def obtener_servicios(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+
+        cnx = db.cnx
+
         lista_servicios = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("Esperando para obtener prendas")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spObtenerServicios')
@@ -558,7 +573,10 @@ class NuevaOrden(tk.Toplevel):
 
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")
@@ -566,13 +584,17 @@ class NuevaOrden(tk.Toplevel):
     # Función para obtener los métodos de pago disponibles
     def obtener_metodos_pago(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         lista_metodos = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("....OBTENIENDO MÉTODOS DE PAGO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spObtenerMetodosPago')
@@ -587,6 +609,9 @@ class NuevaOrden(tk.Toplevel):
                 self.metodos.append(metodo)
             print(self.metodos)
 
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 
@@ -596,11 +621,12 @@ class NuevaOrden(tk.Toplevel):
         value = event.widget.get()
         print(value)
 
+        data = []
         # get data from l
         if value == '':
             self.combo_tipo_prenda['values']=self.descripcion_prenda
         else:
-            data = []
+
             for item in self.descripcion_prenda:
                 if value.lower() in item.lower():
                     data.append(item)
@@ -609,10 +635,15 @@ class NuevaOrden(tk.Toplevel):
 
     # Agregar el tipo de prenda a la orden
     def agregar_prenda(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         tipo_prenda = self.combo_tipo_prenda.get()
         tipo_servicio = self.combo_tipo_serv.get()
         observacion = self.txt_observacion.get()
-        cantidad = self.txt_cantidad_prendas.get()
+        cantidad = self.cantidad.get()
         abono = self.txt_abono.get()
 
         precio = 0
@@ -621,18 +652,18 @@ class NuevaOrden(tk.Toplevel):
             messagebox.showerror(message='Por favor, seleccionar un tipo de prenda', title='Error de registro')
         elif tipo_servicio == '':
             messagebox.showerror(message='Por favor, seleccionar el tipo de servicio', title='Error de registro')
-        elif cantidad == '':
+        elif cantidad == 0:
             messagebox.showerror(message='Por favor, Ingresar la cantidad de prendas', title='Error de registro')
         else:
             lista_prendas = []
 
-            if self.cnx.is_connected():
+            if cnx.is_connected():
 
                 if tipo_servicio != 'PRODUCTO':
 
                     print(".....OBTENIENDO PRECIOS......")
 
-                    cursor = self.cnx.cursor()
+                    cursor = cnx.cursor()
 
                     # Llama al proceso almacenado
                     nueva_prenda = [tipo_prenda, tipo_servicio]
@@ -652,7 +683,7 @@ class NuevaOrden(tk.Toplevel):
 
                         print('Tipo de prenda seleccionado:' + tipo_prenda)
                         print('Tipo de servicio seleccionado:' + tipo_servicio)
-                        print('Cantidad:' + cantidad)
+                        print('Cantidad:' + str(cantidad))
                         print('Precio:' + str(precio))
                         print('Total:' + str(precio * float(cantidad)))
 
@@ -664,13 +695,13 @@ class NuevaOrden(tk.Toplevel):
 
                         self.contador_prendas += 1
 
-                        prenda = (tipo_prenda,tipo_servicio,cantidad, round(precio, 2), round(precio * float(cantidad)), observacion )
+                        prenda = (tipo_prenda, tipo_servicio, cantidad, round(precio, 2), round(precio * float(cantidad)), observacion )
 
                         self.prendas_agregadas.append(prenda)
 
                         self.tabla_prendas.insert("", 'end', iid=self.contador_prendas,
                                                   values=(
-                                                   tipo_prenda, tipo_servicio, cantidad, round(precio), round(precio * float(cantidad), 2), observacion))
+                                                   tipo_prenda, tipo_servicio, cantidad, round(precio,2), round(precio * float(cantidad), 2), observacion))
 
                         self.combo_tipo_prenda.set('')
                         self.combo_tipo_serv.set('')
@@ -678,11 +709,14 @@ class NuevaOrden(tk.Toplevel):
                         self.observacion.set('')
 
                     # Ejecutar el proceso almacenado
-                    self.cnx.commit()
+                    cnx.commit()
+
+                    cursor.close()
+                    cnx.close()
                 else:
                     print(".....OBTENIENDO PRECIOS.....")
 
-                    cursor = self.cnx.cursor()
+                    cursor = cnx.cursor()
 
                     # Llama al proceso almacenado
                     argumento = [tipo_prenda]
@@ -730,7 +764,7 @@ class NuevaOrden(tk.Toplevel):
                             cursor.callproc('spActualizarProducto', argumento)
 
                             # Ejecutar el proceso almacenado
-                            self.cnx.commit()
+                            cnx.commit()
 
                             self.total_pagar += precio * float(cantidad)
 
@@ -756,6 +790,11 @@ class NuevaOrden(tk.Toplevel):
                             self.cantidad.set(0)
                             self.observacion.set('')
 
+                            cursor.close()
+                            cnx.close()
+
+                        cursor.close()
+                        cnx.close()
             else:
                 print("Connection failure")
 
@@ -790,21 +829,25 @@ class NuevaOrden(tk.Toplevel):
     # Función para generar la orden de trabajo
     def generar_orden(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         id_orden = 0
 
         # Obtener datos del cliente
         print('***** DATOS DEL CLIENTE *****')
         id_cliente = self.idCliente.get()
-        print('Id Cliente: ' + id_cliente)
+        print('Id Cliente: ' + str(id_cliente))
 
         # Registrar nuevo cliente si no existe
-        if id_cliente == 0 or id_cliente == '':
+        if id_cliente == 0 and self.cedula.get() != '':
 
-            if self.cnx.is_connected():
+            if cnx.is_connected():
 
                 print(".......CONSULTANDO CLIENTE......")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 # To pass the input Arguments create a list and pass it
@@ -837,7 +880,7 @@ class NuevaOrden(tk.Toplevel):
                     id_cliente = resultado[0]
 
                     # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                    cnx.commit()
 
                     if id_cliente == 0:
                         print('Cliente registrado')
@@ -845,179 +888,189 @@ class NuevaOrden(tk.Toplevel):
                         print('***** DATOS DEL CLIENTE *****')
                         print('Id Cliente: ' + str(id_cliente))
 
-        # Obtener datos del pedido
-        num_orden = self.num_orden.get()
-        fecha_pedido = date.today().strftime("%Y-%m-%d")
-        fecha_entrega = self.fecha_entrega.get()
-        estado = 'Pendiente'
-        observacion_general = self.observacion_general.get()
-
-        metodo_pago = self.combo_metodo.get()
-
-        id_metodo = 0
-
-        if metodo_pago == 'EFECTIVO':
-            id_metodo = 1
-        if metodo_pago == 'TRANSFERENCIA':
-            id_metodo = 2
-
-        abono = self.abono.get()
-        total_pagar = self.total.get()
-        saldo = self.saldo.get()
-
-        if num_orden == '':
-            messagebox.showerror(message='Por favor, Ingresar el número de orden', title='Error de registro')
-        elif metodo_pago == '':
-            messagebox.showerror(message='Por favor, Ingresar el método de pago', title='Error de registro')
-        elif fecha_pedido == '':
-            messagebox.showerror(message='Por favor, Ingresar la fecha del pedido', title='Error de registro')
-        elif fecha_entrega == '' or fecha_entrega == 'yyyy-mm-dd':
-            messagebox.showerror(message='Por favor, Ingresar la fecha de entrega', title='Error de registro')
-        elif abono > total_pagar:
-            messagebox.showerror(message='El abono no puede ser mayor al total de la venta', title='Error de ingreso')
-            self.abono.set(0)
-            self.txt_abono.focus()
-        elif abono < 0:
-            messagebox.showerror(message='El abono no puede ser negativo', title='Error de ingreso')
-            self.abono.set(0)
-            self.txt_abono.focus()
-        elif len(self.prendas_agregadas) == 0:
-            messagebox.showerror(message='Por favor, Ingresar prendas / Accesorios', title='Error de registro')
+        elif id_cliente == 0 and self.cedula.get() == '':
+            messagebox.showerror(message='Por favor, Ingresar datos del cliente', title='Error de registro')
         else:
-            fecha_inicio = datetime.datetime.strptime(fecha_pedido, "%Y-%m-%d")
-            fecha_fin = datetime.datetime.strptime(fecha_entrega, "%Y-%m-%d")
-            if fecha_fin < fecha_inicio:
-                messagebox.showerror(message='La fecha de entrega no debe ser anterior a la actual',
-                                     title='Error de Fechas')
+
+            # Obtener datos del pedido
+            num_orden = self.num_orden.get()
+            fecha_pedido = date.today().strftime("%Y-%m-%d")
+            fecha_entrega = self.fecha_entrega.get()
+            estado = 'Pendiente'
+            observacion_general = self.observacion_general.get()
+
+            metodo_pago = self.combo_metodo.get()
+
+            id_metodo = 0
+
+            if metodo_pago == 'EFECTIVO':
+                id_metodo = 1
+            if metodo_pago == 'TRANSFERENCIA':
+                id_metodo = 2
+
+            abono = self.abono.get()
+            total_pagar = self.total.get()
+            saldo = self.saldo.get()
+
+            if num_orden == '':
+                messagebox.showerror(message='Por favor, Ingresar el número de orden', title='Error de registro')
+            elif metodo_pago == '':
+                messagebox.showerror(message='Por favor, Ingresar el método de pago', title='Error de registro')
+            elif fecha_pedido == '':
+                messagebox.showerror(message='Por favor, Ingresar la fecha del pedido', title='Error de registro')
+            elif fecha_entrega == '' or fecha_entrega == 'yyyy-mm-dd':
+                messagebox.showerror(message='Por favor, Ingresar la fecha de entrega', title='Error de registro')
+            elif abono > total_pagar:
+                messagebox.showerror(message='El abono no puede ser mayor al total de la venta', title='Error de ingreso')
+                self.abono.set(0)
+                self.txt_abono.focus()
+            elif abono < 0:
+                messagebox.showerror(message='El abono no puede ser negativo', title='Error de ingreso')
+                self.abono.set(0)
+                self.txt_abono.focus()
+            elif len(self.prendas_agregadas) == 0:
+                messagebox.showerror(message='Por favor, Ingresar prendas / Accesorios', title='Error de registro')
             else:
-                if self.cnx.is_connected():
+                fecha_inicio = datetime.datetime.strptime(fecha_pedido, "%Y-%m-%d")
+                fecha_fin = datetime.datetime.strptime(fecha_entrega, "%Y-%m-%d")
+                if fecha_fin < fecha_inicio:
+                    messagebox.showerror(message='La fecha de entrega no debe ser anterior a la actual',
+                                         title='Error de Fechas')
+                else:
+                    if cnx.is_connected():
 
-                    print(".......REGISTRANDO ORDEN CLIENTE......")
+                        print(".......REGISTRANDO ORDEN CLIENTE......")
 
-                    cursor = self.cnx.cursor()
+                        cursor = cnx.cursor()
 
-                    # Llama al proceso almacenado
-                    # To pass the input Arguments create a list and pass it
-                    nueva_orden = [id_cliente, num_orden, fecha_pedido,
-                                   fecha_entrega, estado,
-                                   round(self.saldo.get(), 2), self.total.get(), self.datos_usuario.id, observacion_general]
+                        # Llama al proceso almacenado
+                        # To pass the input Arguments create a list and pass it
+                        nueva_orden = [id_cliente, num_orden, fecha_pedido,
+                                       fecha_entrega, estado,
+                                       round(self.saldo.get(), 2), self.total.get(), self.datos_usuario.id, observacion_general]
 
-                    cursor.callproc('spGenerarOrden', nueva_orden)
+                        cursor.callproc('spGenerarOrden', nueva_orden)
 
-                    resultado = []
+                        resultado = []
 
-                    for result in cursor.stored_results():
-                        a = result.fetchall()
-                        resultado = a[0]
+                        for result in cursor.stored_results():
+                            a = result.fetchall()
+                            resultado = a[0]
 
-                    id_orden = resultado[0]
+                        id_orden = resultado[0]
 
-                    print('---LA ORDEN SE REGISTRO CON EL ID: ' + str(id_orden))
+                        print('---LA ORDEN SE REGISTRO CON EL ID: ' + str(id_orden))
 
-                    print('***** DATOS DEL PEDIDO *****')
-                    print('Num.orden: ' + num_orden)
-                    print('Fecha_pedido: ' + fecha_pedido)
-                    print('Fecha_entrega: ' + fecha_entrega)
-                    print('Estado: ' + estado)
+                        print('***** DATOS DEL PEDIDO *****')
+                        print('Num.orden: ' + num_orden)
+                        print('Fecha_pedido: ' + fecha_pedido)
+                        print('Fecha_entrega: ' + fecha_entrega)
+                        print('Estado: ' + estado)
 
-                    # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                        # Ejecutar el proceso almacenadoe
+                        cnx.commit()
 
-            if id_orden != 0:
+                if id_orden != 0:
 
-                # Obtener prenda agregada
-                print('***** AGREGANDO PRENDAS SELECCIONADAS A LA ORDEN *****')
+                    # Obtener prenda agregada
+                    print('***** AGREGANDO PRENDAS SELECCIONADAS A LA ORDEN *****')
 
-                id_tipo_prenda = 0
-                for prenda in self.prendas_agregadas:
-                    print(prenda)
-                    if self.cnx.is_connected():
+                    id_tipo_prenda = 0
+                    for prenda in self.prendas_agregadas:
+                        print(prenda)
+                        if cnx.is_connected():
 
-                            print(".......INGRESANDO PRENDAS CLIENTE......")
+                                print(".......INGRESANDO PRENDAS CLIENTE......")
 
-                            cursor = self.cnx.cursor()
+                                cursor = cnx.cursor()
 
-                            # Llama al proceso almacenado
-                            # To pass the input Arguments create a list and pass it
-                            descripcion_prenda = [prenda[0]]
+                                # Llama al proceso almacenado
+                                # To pass the input Arguments create a list and pass it
+                                descripcion_prenda = [prenda[0]]
 
-                            cursor.callproc('spObtenerIdPrenda', descripcion_prenda)
+                                cursor.callproc('spObtenerIdPrenda', descripcion_prenda)
 
-                            resultado = 0
+                                resultado = 0
 
-                            for result in cursor.stored_results():
-                                a = result.fetchall()
-                                resultado = a[0]
+                                for result in cursor.stored_results():
+                                    a = result.fetchall()
+                                    resultado = a[0]
 
-                            id_tipo_prenda = resultado[0]
+                                id_tipo_prenda = resultado[0]
 
-                            print('Id prenda: ' + str(id_tipo_prenda))
+                                print('Id prenda: ' + str(id_tipo_prenda))
 
-                            # Ejecutar el proceso almacenadoe
-                            self.cnx.commit()
+                                # Ejecutar el proceso almacenadoe
+                                cnx.commit()
 
-                            # Obtener el id de cada servicio seleccionado
-                            servicio_prenda = [prenda[1]]
+                                # Obtener el id de cada servicio seleccionado
+                                servicio_prenda = [prenda[1]]
 
-                            cursor.callproc('spObtenerIdServicio', servicio_prenda)
+                                cursor.callproc('spObtenerIdServicio', servicio_prenda)
 
-                            resultado2 = 0
+                                resultado2 = 0
 
-                            for result in cursor.stored_results():
-                                a = result.fetchall()
-                                resultado2 = a[0]
+                                for result in cursor.stored_results():
+                                    a = result.fetchall()
+                                    resultado2 = a[0]
 
-                            id_tipo_servicio = resultado2[0]
+                                id_tipo_servicio = resultado2[0]
 
-                            print('Id servicio ' + str(id_tipo_servicio))
+                                print('Id servicio ' + str(id_tipo_servicio))
 
-                            # Obtener el id de cada servicio seleccionado
-                            datos_prenda = [id_tipo_prenda, id_tipo_servicio, prenda[2], prenda[4], prenda[5], id_orden]
+                                # Obtener el id de cada servicio seleccionado
+                                datos_prenda = [id_tipo_prenda, id_tipo_servicio, prenda[2], prenda[4], prenda[5], id_orden]
 
-                            cursor.callproc('spAgregarPrenda', datos_prenda)
+                                cursor.callproc('spAgregarPrenda', datos_prenda)
 
-                            # Ejecutar el proceso almacenadoe
-                            self.cnx.commit()
+                                # Ejecutar el proceso almacenadoe
+                                cnx.commit()
 
-                if self.cnx.is_connected():
+                    if cnx.is_connected():
 
-                    print(".......REGISTRANDO PAGO REALIZADO......")
+                        print(".......REGISTRANDO PAGO REALIZADO......")
 
-                    cursor = self.cnx.cursor()
+                        cursor = cnx.cursor()
 
-                    # Llama al proceso almacenado
-                    # To pass the input Arguments create a list and pass it
-                    pago_realizado = [self.abono.get(), id_orden, self.fecha_pedido.get(), id_metodo,
-                                      self.datos_usuario.id_caja, self.saldo.get()]
+                        # Llama al proceso almacenado
+                        # To pass the input Arguments create a list and pass it
+                        pago_realizado = [self.abono.get(), id_orden, self.fecha_pedido.get(), id_metodo,
+                                          self.datos_usuario.id_caja, self.saldo.get()]
 
-                    cursor.callproc('spRegistrarPago', pago_realizado)
+                        cursor.callproc('spRegistrarPago', pago_realizado)
 
-                    resultado = 0
+                        resultado = 0
 
-                    for result in cursor.stored_results():
-                        a = result.fetchall()
-                        resultado = a[0]
+                        for result in cursor.stored_results():
+                            a = result.fetchall()
+                            resultado = a[0]
 
-                    # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                        # Ejecutar el proceso almacenadoe
+                        cnx.commit()
 
-                messagebox.showinfo(message='ORDEN REGISTRADA EXITOSAMENTE!!', title='Generar nueva orden')
-                self.destroy()
+                    messagebox.showinfo(message='ORDEN REGISTRADA EXITOSAMENTE!!', title='Generar nueva orden')
+                    self.destroy()
 
-            # Obtener empleado a cargo
-            print('***** EMPLEADO A CARGO *****')
-            print('Id usuario: ' + str(self.datos_usuario.id))
+                    cnx.close()
+
+                # Obtener empleado a cargo
+                print('***** EMPLEADO A CARGO *****')
+                print('Id usuario: ' + str(self.datos_usuario.id))
 
     # Obtener el nuevo número de orden
     def obtener_num_orden(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         nuevo_num_orden = 0
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("...OBTENIENDO NÚMERO DE ORDEN.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spContarOrdenes')
@@ -1028,6 +1081,9 @@ class NuevaOrden(tk.Toplevel):
                 print(nuevo_num_orden)
 
             self.num_orden.set(nuevo_num_orden)
+
+            cursor.close()
+            cnx.close()
 
     # Menú para eliminar o editar prendas
     def popup(self, event):
@@ -1045,6 +1101,10 @@ class NuevaOrden(tk.Toplevel):
             pass
 
     def eliminar_prenda(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         saldo_total = self.saldo.get()
 
@@ -1090,7 +1150,7 @@ class NuevaOrden(tk.Toplevel):
             stock = 0
             observacion_producto = ''
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llamar al proceso almacenado
             argumento = [descripcion]
@@ -1115,7 +1175,7 @@ class NuevaOrden(tk.Toplevel):
 
                 cursor.callproc('spActualizarProducto', argumento)
 
-                self.cnx.commit()
+                cnx.commit()
 
                 if cursor.rowcount != 0:
                     messagebox.showinfo(message='Se actualizó correctamente el inventario',
@@ -1125,6 +1185,8 @@ class NuevaOrden(tk.Toplevel):
 
                     self.tabla_prendas.delete(selected_item)
 
+                cursor.close()
+                cnx.close()
         else:
 
             self.prendas_agregadas.pop(iid)
@@ -1139,12 +1201,17 @@ class NuevaOrden(tk.Toplevel):
 
     # Validar el tipo de servicio para filtrar los tipos de prenda
     def validar_servicio(self, event):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         servicio_seleccionado = self.combo_tipo_serv.get()
         print(servicio_seleccionado)
 
         self.descripcion_prenda = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             if servicio_seleccionado != 'PRODUCTO':
 
@@ -1152,7 +1219,7 @@ class NuevaOrden(tk.Toplevel):
 
                 print("Esperando para obtener prendas")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 argumento = [servicio_seleccionado]
@@ -1171,7 +1238,10 @@ class NuevaOrden(tk.Toplevel):
                 print(self.prendas)
 
                 # Ejecutar el proceso almacenadoe
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
 
                 for prenda in self.prendas:
                     self.descripcion_prenda.append(prenda[0])
@@ -1182,7 +1252,7 @@ class NuevaOrden(tk.Toplevel):
 
                 print("Esperando para obtener productos")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 cursor.callproc('spObtenerProductos')
@@ -1200,7 +1270,10 @@ class NuevaOrden(tk.Toplevel):
                 print(self.prendas)
 
                 # Ejecutar el proceso almacenadoe
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
 
                 for prenda in self.prendas:
                     self.descripcion_prenda.append(prenda[1])

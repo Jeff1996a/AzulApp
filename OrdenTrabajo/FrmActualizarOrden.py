@@ -26,10 +26,6 @@ class ActualizarOrden(tk.Toplevel):
         # Tipo de pago
         self.tipo_pago = tk.StringVar()
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
-
         #Vector para obtener datos de la orden
         self.datos_orden = []
 
@@ -416,13 +412,17 @@ class ActualizarOrden(tk.Toplevel):
 
     def obtener_orden(self, event):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         orden_obtenida=[]
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             argument = [self.num_orden.get()]
@@ -449,7 +449,7 @@ class ActualizarOrden(tk.Toplevel):
 
                 saldo = round(self.datos_orden[6], 2)
                 total = self.datos_orden[7]
-                observaciones = self.datos_orden[8]
+                observaciones = self.datos_orden[9]
 
                 # Validar el estado de la orden
                 if estado == 'PENDIENTE':
@@ -478,7 +478,7 @@ class ActualizarOrden(tk.Toplevel):
 
                 print('id cliente: ' + str(id_cliente))
 
-                if self.cnx.is_connected():
+                if cnx.is_connected():
 
                     cliente_encontrados=[]
 
@@ -503,13 +503,13 @@ class ActualizarOrden(tk.Toplevel):
                     self.cedula.set(cliente[5])
 
                     # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                    cnx.commit()
 
                 else:
                     print("Connection failure")
 
                 print('..... OBTENER LAS PRENDAS REGISTRADAS....')
-                if self.cnx.is_connected():
+                if cnx.is_connected():
 
                     prendas_agregadas=[]
 
@@ -535,24 +535,32 @@ class ActualizarOrden(tk.Toplevel):
                                                   values=item)
 
                     # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                    cnx.commit()
 
                 else:
                     print("Connection failure")
 
                 print('..... OBTENER LOS PAGOS REALIZADOS....')
                 self.obtener_importe(id_orden)
+
             else:
                 messagebox.showerror(message='¡NO SE ENCONTRÓ NINGUNA ORDEN!', title='Error de busqueda')
                 print('NO SE ENCONTRÓ NINGÚN REGISTRO')
 
-            # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            # Ejecutar el proceso almacenado
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 
         else:
             print("Connection failure")
 
     def actualizar_orden(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         print('....ACTUALIZANDO LA ENTREGA DEL PEDIDO.....')
 
@@ -626,11 +634,11 @@ class ActualizarOrden(tk.Toplevel):
             else:
                 self.saldo.set(0)
 
-                if self.cnx.is_connected():
+                if cnx.is_connected():
 
                     print(".....ACTUALIZANDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-                    cursor = self.cnx.cursor()
+                    cursor = cnx.cursor()
 
                     # Llama al proceso almacenado
                     # To pass the input Arguments create a list and pass it
@@ -644,20 +652,20 @@ class ActualizarOrden(tk.Toplevel):
                         print(a)
 
                     # Ejecutar el proceso almacenadoe
-                    self.cnx.commit()
+                    cnx.commit()
 
                     if cursor.rowcount != 0:
                         self.estado.set('ENTREGADO')
 
-                        if self.cnx.is_connected():
+                        if cnx.is_connected():
 
                             print(".......REGISTRANDO PAGO REALIZADO......")
 
-                            cursor = self.cnx.cursor()
+                            cursor = cnx.cursor()
 
                             # Llama al proceso almacenado
                             # To pass the input Arguments create a list and pass it
-                            pago_realizado = [self.abono.get(), id_orden, self.fecha_pedido.get(), id_metodo,
+                            pago_realizado = [self.abono.get(), id_orden, self.fecha_entrega.get(), id_metodo,
                                               self.datos_usuario.id_caja, 0]
 
                             cursor.callproc('spRegistrarPago', pago_realizado)
@@ -669,9 +677,15 @@ class ActualizarOrden(tk.Toplevel):
                                 resultado = a[0]
 
                             # Ejecutar el proceso almacenadoe
-                            self.cnx.commit()
+                            cnx.commit()
+
+                            cursor.close()
+                            cnx.close()
                         messagebox.showinfo(message='ENTREGA REGISTRADA EXITOSAMENTE!!', title='Entregar pedido')
                         self.destroy()
+
+                    cursor.close()
+                    cnx.close()
                 else:
                     print("Connection failure")
 
@@ -681,13 +695,17 @@ class ActualizarOrden(tk.Toplevel):
     # Función para obtener los métodos de pago disponibles
     def obtener_metodos_pago(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         lista_metodos = []
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print("....OBTENIENDO MÉTODOS DE PAGO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spObtenerMetodosPago')
@@ -702,15 +720,23 @@ class ActualizarOrden(tk.Toplevel):
                 self.metodos.append(metodo)
             print(self.metodos)
 
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 
     def obtener_importe(self, id_orden):
-        if self.cnx.is_connected():
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             pagos_encontrados = []
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             # To pass the input Arguments create a list and pass it
@@ -723,7 +749,7 @@ class ActualizarOrden(tk.Toplevel):
                 print(pagos_encontrados)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if len(pagos_encontrados) != 0:
 
@@ -742,5 +768,8 @@ class ActualizarOrden(tk.Toplevel):
                                            pago[2].strftime("%Y-%m-%d") + ' con: ' + pago[3])
             else:
                 self.msg_abono.set('')
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")

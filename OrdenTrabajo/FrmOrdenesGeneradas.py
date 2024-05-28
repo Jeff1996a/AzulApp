@@ -6,6 +6,7 @@ from datetime import date
 
 from dbConnection import dbConnection
 
+
 class ListaOrdenes(tk.Toplevel):
 
     def __init__(self, datos_usuario):
@@ -25,10 +26,6 @@ class ListaOrdenes(tk.Toplevel):
 
         self.total_transferencias = tk.DoubleVar()
         self.total_efectivo = tk.DoubleVar()
-
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
 
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=10, pady=0)
@@ -167,13 +164,17 @@ class ListaOrdenes(tk.Toplevel):
 
     def obtener_ordenes(self):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         orden_obtenida=[]
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Parametros del proceso almacenado
             parametros = [self.buscar.get(),]
@@ -237,7 +238,10 @@ class ListaOrdenes(tk.Toplevel):
             print('ORDENES GENERADAS: ' + str(self.total_ordenes))
             print('ORDENES PENDIENTES: ' + str(self.total_pendientes))
             print('ORDENES ENTREGADAS: ' + str(self.total_entregadas))
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 
@@ -256,16 +260,19 @@ class ListaOrdenes(tk.Toplevel):
 
     # Filtar los datos de la fecha
     def filtrar_tablas(self):
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         # Limpiar la tabla
         for i in self.tabla_ordenes.get_children():
             self.tabla_ordenes.delete(i)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
 
             print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Parametros del proceso almacenado
             parametros = [self.buscar.get(),]
@@ -343,6 +350,9 @@ class ListaOrdenes(tk.Toplevel):
             print('ORDENES ENTREGADAS: ' + str(self.total_entregadas))
 
 
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")

@@ -13,10 +13,6 @@ class FrmInventarioProductos(tk.Toplevel):
 
         self.productos_inventario = []
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
-
         # ******************************************TITULO DEL FORMULARIO**********************************
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=20, pady=5)
@@ -70,8 +66,8 @@ class FrmInventarioProductos(tk.Toplevel):
         self.tabla_productos.pack(side='bottom', fill='both', padx=5, pady=5)
 
         self.context_menu = tk.Menu(self.tabla_productos, tearoff=0)
-        self.context_menu.add_command(label="Eliminar", command=self.eliminar_producto)
-        self.context_menu.add_command(label="Actualizar", command=self.actualizar_producto)
+        self.context_menu.add_command(label="Eliminar producto de inventario", command=self.eliminar_producto)
+        self.context_menu.add_command(label="Actualizar datos del producto", command=self.actualizar_producto)
 
         self.tabla_productos.bind("<Button-3>", self.popup)
 
@@ -129,17 +125,21 @@ class FrmInventarioProductos(tk.Toplevel):
 
     def obtener_productos(self, *args):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         texto = self.buscar.get()
 
         # Limpiar la tabla
         for i in self.tabla_productos.get_children():
             self.tabla_productos.delete(i)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             if texto == '':
                 print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 cursor.callproc('spObtenerProductos')
@@ -153,11 +153,15 @@ class FrmInventarioProductos(tk.Toplevel):
                     self.tabla_productos.insert("", 'end', iid=i, values=producto)
                     i += 1
 
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
+
             else:
                 print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 argumento = [texto]
@@ -172,7 +176,10 @@ class FrmInventarioProductos(tk.Toplevel):
                     self.tabla_productos.insert("", 'end', iid=i, values=producto)
                     i += 1
 
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
         else:
             print("Connection failure")
 
@@ -181,6 +188,10 @@ class FrmInventarioProductos(tk.Toplevel):
         self.destroy()
 
     def eliminar_producto(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         # Get selected item to Delete
         producto = self.tabla_productos.focus()
@@ -193,10 +204,10 @@ class FrmInventarioProductos(tk.Toplevel):
 
         print(datos_producto)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             print(".....ACTUALIZANDO DATOS PRODUCTO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a list and pass it
             args = [datos_producto[0]]
@@ -207,7 +218,7 @@ class FrmInventarioProductos(tk.Toplevel):
                 print(response)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if cursor.rowcount != 0:
                 self.productos_inventario.pop(int(selected_item) - 1)
@@ -216,6 +227,10 @@ class FrmInventarioProductos(tk.Toplevel):
 
                 messagebox.showinfo(message='PRODUCTO ELIMINADO CORRECTAMENTE!!', title='Eliminar producto')
                 self.obtener_productos()
+
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 
