@@ -13,10 +13,6 @@ class FrmActualizarPrendaCatalogo(tk.Toplevel):
 
         print(datos_prenda)
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
-
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=20, pady=5)
 
@@ -154,6 +150,9 @@ class FrmActualizarPrendaCatalogo(tk.Toplevel):
         self.grab_set()
 
     def actualizar_prenda(self):
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         tipo_servicio = self.tipo_servicio.get()
         id_servicio = 0
@@ -169,10 +168,10 @@ class FrmActualizarPrendaCatalogo(tk.Toplevel):
         elif tipo_servicio == 'PLANTA AZUL':
             id_servicio = 5
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             print(".....ACTUALIZANDO DATOS PRODUCTO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a list and pass it
             args = [self.id_prenda.get(), self.descripcion.get(), id_servicio,
@@ -184,11 +183,14 @@ class FrmActualizarPrendaCatalogo(tk.Toplevel):
                 print(response)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if cursor.rowcount != 0:
                 messagebox.showinfo(message='PRENDA ACTUALIZADA CORRECTAMENTE!!', title='Entregar pedido')
                 self.destroy()
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 

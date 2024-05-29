@@ -4,6 +4,8 @@ from tkinter import ttk, messagebox
 from PIL import ImageTk, Image
 from tkcalendar import *
 from datetime import date
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
 from dbConnection import dbConnection
 
@@ -469,7 +471,7 @@ class NuevaOrden(tk.Toplevel):
 
             # Llama al proceso almacenado
             # To pass the input Arguments create a list and pass it
-            buscador = [self.cedula.get(), ]
+            buscador = [self.cedula.get()]
             cursor.callproc('spBuscarCliente', buscador)
 
             for result in cursor.stored_results():
@@ -750,7 +752,7 @@ class NuevaOrden(tk.Toplevel):
 
                             print('Id producto: ' + str(id_producto))
                             print('Tipo de producto seleccionado:' + descripcion_producto)
-                            print('Cantidad:' + cantidad)
+                            print('Cantidad:' + str(cantidad))
                             print('Cantidad inventario: ' + str(cantidad_producto))
                             print('Cantidad restante: ' + str(cantidad_restante))
                             print('Precio:' + str(precio))
@@ -978,6 +980,9 @@ class NuevaOrden(tk.Toplevel):
                     id_tipo_prenda = 0
                     for prenda in self.prendas_agregadas:
                         print(prenda)
+
+                        tipo_servicio = prenda[1]
+
                         if cnx.is_connected():
 
                                 print(".......INGRESANDO PRENDAS CLIENTE......")
@@ -988,7 +993,10 @@ class NuevaOrden(tk.Toplevel):
                                 # To pass the input Arguments create a list and pass it
                                 descripcion_prenda = [prenda[0]]
 
-                                cursor.callproc('spObtenerIdPrenda', descripcion_prenda)
+                                if tipo_servicio == 'PRODUCTO':
+                                    cursor.callproc('spObtenerIdProducto', descripcion_prenda)
+                                else:
+                                    cursor.callproc('spObtenerIdPrenda', descripcion_prenda)
 
                                 resultado = 0
 
@@ -1049,6 +1057,9 @@ class NuevaOrden(tk.Toplevel):
                         cnx.commit()
 
                     messagebox.showinfo(message='ORDEN REGISTRADA EXITOSAMENTE!!', title='Generar nueva orden')
+
+
+
                     self.destroy()
 
                     cnx.close()
@@ -1056,6 +1067,7 @@ class NuevaOrden(tk.Toplevel):
                 # Obtener empleado a cargo
                 print('***** EMPLEADO A CARGO *****')
                 print('Id usuario: ' + str(self.datos_usuario.id))
+                self.generar_pdf()
 
     # Obtener el nuevo número de orden
     def obtener_num_orden(self):
@@ -1284,3 +1296,37 @@ class NuevaOrden(tk.Toplevel):
             print("Connection failure")
 
 
+    def generar_pdf(self):
+
+        fecha_pedido = self.fecha_pedido.get()
+        fecha_entrega = self.fecha_entrega.get()
+        cedula = self.cedula.get()
+        nombres_cliente = self.nombres.get()
+        direccion = self.direccion.get()
+        telefono = self.telefono.get()
+
+        canvas = Canvas('prueba.pdf', pagesize=(595.44, 311.76))
+
+        canvas.setFont('Helvetica',8)
+
+        canvas.drawString(270.0, 270.0, fecha_pedido)
+        canvas.drawString(270.0, 260.0, fecha_entrega)
+        canvas.drawString(270.0, 250.0, nombres_cliente)
+        canvas.drawString(270.0, 240.0, direccion)
+        canvas.drawString(520.08, 250.0, cedula)
+        canvas.drawString(520.08, 240.0, telefono)
+
+        pos_x = 10
+        pos_y = 500.08
+
+        if len(self.prendas_agregadas) != 0:
+
+            print('....AGREGANDO PRENDAS A FACTURA......')
+
+            for prenda in self.prendas_agregadas:
+                print(prenda)
+
+            t = Table(self.prendas_agregadas)
+
+
+        canvas.save()

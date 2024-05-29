@@ -7,46 +7,46 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 from datetime import date, datetime
 
+
 class App(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
 
-        self.pack(side='top')
+        self.pack(side='top', ipadx=0)
 
         # Definir un Frame para mostrar la imagen de bienvenida
         self.frame = ttk.Frame(self)
         self.frame.pack(padx=0, pady=10)
 
         # Create an object of tkinter ImageTk
-        self.readImg = Image.open("Img/AzulLavanderia.png")
-        self.newImg = self.readImg.resize((350, 250))
+        self.readImg = Image.open("Img/Azul.png")
+        self.newImg = self.readImg.resize((400, 300))
         self.img = ImageTk.PhotoImage(self.newImg)
 
         # Create a Label Widget to display the text or Image
         self.label = ttk.Label(self.frame, image=self.img)
-        self.label.pack()
+        self.label.pack(padx=0, pady=0)
 
         # Label username
-        self.lblUsername = ttk.Label(text='Usuario:', font=("Courier", 10))
+        self.lblUsername = ttk.Label(text='Usuario:', font=("Courier", 12))
         self.lblUsername.pack()
 
         # Text username
         self.txtUsername = ttk.Entry( width=25)
-        self.txtUsername.pack(padx=0, pady=5, ipadx=4, ipady=4)
+        self.txtUsername.pack(padx=0, pady=3, ipadx=4, ipady=4)
         self.txtUsername.focus()
 
         # Label password
-        self.lblPassword = tk.Label(text='Contraseña:', font=("Courier",10))
+        self.lblPassword = tk.Label(text='Contraseña:', font=("Courier",12))
         self.lblPassword.pack()
 
         # Text username
         self.txtPassword = ttk.Entry(show='*', width=25)
-        self.txtPassword.pack(ipadx=4, ipady=4)
+        self.txtPassword.pack(ipadx=2, ipady=4)
 
         # Label password
         self.lblAlerta = tk.Label(text='', font=("Courier", 8), foreground='red')
         self.lblAlerta.pack()
-
 
         # Create the application variable.
         self.username = tk.StringVar()
@@ -141,8 +141,8 @@ class App(tk.Frame):
 root = tk.Tk()
 myapp = App(root)
 myapp.master.title('Azul Lavandería')
-myapp.master.minsize(380, 300)
-myapp.master.anchor('n')
+myapp.master.minsize(410, 310)
+myapp.master.anchor('center')
 myapp.master.mainloop()
 
 

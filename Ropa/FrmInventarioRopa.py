@@ -6,16 +6,13 @@ from Producto.FrmActualizarProducto import FrmActualizarProducto
 from Producto.FrmAgregarProducto import FrmAgregarProducto
 from dbConnection import  dbConnection
 
+
 class FrmInventarioPrendas(tk.Toplevel):
     def __init__(self, datos_usuario):
         super().__init__()
         self.datos_usuario = datos_usuario
 
         self.prendas_por_entregar = []
-
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
 
         # ******************************************TITULO DEL FORMULARIO**********************************
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
@@ -73,7 +70,7 @@ class FrmInventarioPrendas(tk.Toplevel):
 
         self.tabla_prendas.column('#1', width=25, minwidth=25, stretch=False, anchor='center')
         self.tabla_prendas.column('#2', width=80, minwidth=80, stretch=False, anchor='center')
-        self.tabla_prendas.column('#3', width=180, minwidth=180, stretch=False, anchor='center')
+        self.tabla_prendas.column('#3', width=230, minwidth=230, stretch=False, anchor='center')
         self.tabla_prendas.column('#4', width=200, minwidth=200, stretch=False, anchor='center')
         self.tabla_prendas.column('#5', width=100, minwidth=100, stretch=False, anchor='center')
         self.tabla_prendas.column('#6', width=120, minwidth=120, stretch=False, anchor='center')
@@ -93,9 +90,65 @@ class FrmInventarioPrendas(tk.Toplevel):
         self.tabla_prendas.heading('#9', text='TOTAL', anchor='center')
         self.tabla_prendas.heading('#10', text='OBSERVACIONES', anchor='center')
 
+        # ************************** RESUMEN DE PRENDAS POR SERVICIO ***********
+
+        self.contenedor_resumen_prendas = tk.LabelFrame(self, text='TOTAL DE PRENDAS POR SERVICIO',
+                                        font=("Courier", 12), foreground='green')
+        self.contenedor_resumen_prendas.pack(side='top', fill='both', padx=5, pady=3, ipadx=15, ipady=5)
+
+        # Contenedor contador prendas en seco
+        self.contenedor_total_seco = tk.Frame(self.contenedor_resumen_prendas)
+        self.contenedor_total_seco.pack(side='left', padx=10, pady=0)
+
+        self.label_total_seco = ttk.Label(self.contenedor_total_seco, text='SECO: ', font=('Courier', 12))
+        self.label_total_seco.pack(side='left')
+
+        self.total_seco = tk.IntVar()
+
+        self.txt_total_seco = ttk.Entry(self.contenedor_total_seco, textvariable=self.total_seco, width=15, state='readonly')
+        self.txt_total_seco.pack(side='left', padx=2, pady=0)
+
+        # Contenedor contador prendas en local
+        self.contenedor_total_local = tk.Frame(self.contenedor_resumen_prendas)
+        self.contenedor_total_local.pack(side='left', padx=10, pady=0)
+
+        self.label_total_local = ttk.Label(self.contenedor_total_local, text='LOCAL: ', font=('Courier', 12))
+        self.label_total_local.pack(side='left')
+
+        self.total_local = tk.IntVar()
+
+        self.txt_total_local = ttk.Entry(self.contenedor_total_local, textvariable=self.total_local, width=15
+                                         , state='readonly')
+        self.txt_total_local.pack(side='left', padx=2, pady=0)
+
+        # Contenedor contador prendas tinturado
+        self.contenedor_total_tinturado = tk.Frame(self.contenedor_resumen_prendas)
+        self.contenedor_total_tinturado.pack(side='left', padx=10, pady=0)
+
+        self.label_total_tinturado = ttk.Label(self.contenedor_total_tinturado, text='TINTURADO: ', font=('Courier', 12))
+        self.label_total_tinturado.pack(side='left')
+
+        self.total_tinturado = tk.IntVar()
+
+        self.txt_total_tinturado = ttk.Entry(self.contenedor_total_tinturado, textvariable=self.total_tinturado, width=15
+                                             , state='readonly')
+        self.txt_total_tinturado.pack(side='left', padx=2, pady=0)
+
+        # Contenedor contador planta azul
+        self.contenedor_total_azul = tk.Frame(self.contenedor_resumen_prendas)
+        self.contenedor_total_azul.pack(side='left', padx=10, pady=0)
+
+        self.label_total_azul = ttk.Label(self.contenedor_total_azul, text='AZUL: ', font=('Courier', 12))
+        self.label_total_azul.pack(side='left')
+
+        self.total_azul = tk.IntVar()
+
+        self.txt_total_azul = ttk.Entry(self.contenedor_total_azul, textvariable=self.total_azul, width=15, state='readonly')
+        self.txt_total_azul.pack(side='left', padx=2, pady=0)
+
         self.obtener_prendas()
 
-        # *****CONTENEDOR BOTONES******
+        # ***** CONTENEDOR BOTONES ******
         self.button_container = tk.Frame(self)
         self.button_container.pack(side="bottom")
 
@@ -133,11 +186,15 @@ class FrmInventarioPrendas(tk.Toplevel):
 
     def obtener_prendas(self):
 
-        if self.cnx.is_connected():
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             print(".....OBTENIENDO INFORMACIÓN DE LA ORDEN DE TRABAJO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # Llama al proceso almacenado
             cursor.callproc('spInventarioPrendas')
@@ -147,11 +204,36 @@ class FrmInventarioPrendas(tk.Toplevel):
                 print(self.prendas_por_entregar)
 
             i = 1
+
+            total_seco = 0
+            total_local = 0
+            total_tinturado = 0
+            total_azul = 0
+
             for prenda in self.prendas_por_entregar:
+                tipo_servicio = prenda[4]
+                if tipo_servicio == 'SECO':
+                    total_seco += 1
+                elif tipo_servicio == 'LOCAL':
+                    total_local += 1
+                elif tipo_servicio == 'TINTURADO':
+                    total_tinturado += 1
+                elif tipo_servicio == 'PLANTA AZUL':
+                    total_azul += 1
+
                 self.tabla_prendas.insert("", 'end', iid=i, values=prenda)
+
+                self.total_seco.set(total_seco)
+                self.total_local.set(total_local)
+                self.total_tinturado.set(total_tinturado)
+                self.total_azul.set(total_azul)
+
                 i += 1
 
-            self.cnx.commit()
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 
@@ -160,6 +242,10 @@ class FrmInventarioPrendas(tk.Toplevel):
         self.destroy()
 
     def eliminar_producto(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
         # Get selected item to Delete
         producto = self.tabla_prendas.focus()
@@ -172,10 +258,10 @@ class FrmInventarioPrendas(tk.Toplevel):
 
         print(datos_producto)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             print(".....ACTUALIZANDO DATOS PRODUCTO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a list and pass it
             args = [datos_producto[0]]
@@ -186,7 +272,7 @@ class FrmInventarioPrendas(tk.Toplevel):
                 print(response)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if cursor.rowcount != 0:
                 self.prendas_por_entregar.pop(int(selected_item) - 1)
@@ -195,6 +281,10 @@ class FrmInventarioPrendas(tk.Toplevel):
 
                 messagebox.showinfo(message='PRODUCTO ELIMINADO CORRECTAMENTE!!', title='Eliminar producto')
                 self.obtener_prendas()
+
+            cursor.close()
+            cnx.close()
+
         else:
             print("Connection failure")
 

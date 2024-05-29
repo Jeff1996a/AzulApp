@@ -12,10 +12,6 @@ class FrmCatalogoPrendas(tk.Toplevel):
         self.datos_usuario = datos_usuario
         self.catalogo_prendas = []
 
-        # Conexión a la base de datos Azul lavandería
-        self.db = dbConnection()
-        self.cnx = self.db.cnx
-
         # ******************************************TITULO DEL FORMULARIO**********************************
         self.lblTitulo = ttk.Label(self, text='Azul Lavandería', font=('Courier', 20), foreground='blue')
         self.lblTitulo.pack(side='top', padx=20, pady=5)
@@ -138,7 +134,11 @@ class FrmCatalogoPrendas(tk.Toplevel):
 
     def agregar_prenda(self):
 
-        if self.cnx.is_connected():
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
+        if cnx.is_connected():
 
             servicio = self.tipo_servicio.get()
             id_servicio = 0
@@ -173,7 +173,7 @@ class FrmCatalogoPrendas(tk.Toplevel):
                     response = result.fetchall()
                     print(response)
 
-                self.cnx.commit()
+                cnx.commit()
 
                 id_prenda = response[0][0]
 
@@ -186,11 +186,17 @@ class FrmCatalogoPrendas(tk.Toplevel):
                 else:
                     messagebox.showerror(message='NO SE PUDO AGREGAR LA PRENDA', title='Agregar prenda a catálogo')
 
+                cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 
-
     def eliminar_prenda(self):
+
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         # Get selected item to Delete
         producto = self.tabla_catalogo.focus()
         print(producto)
@@ -202,10 +208,10 @@ class FrmCatalogoPrendas(tk.Toplevel):
 
         print(datos_producto)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             print(".....ACTUALIZANDO DATOS PRODUCTO.....")
 
-            cursor = self.cnx.cursor()
+            cursor = cnx.cursor()
 
             # To pass the input Arguments create a list and pass it
             args = [datos_producto[0]]
@@ -216,7 +222,7 @@ class FrmCatalogoPrendas(tk.Toplevel):
                 print(response)
 
             # Ejecutar el proceso almacenadoe
-            self.cnx.commit()
+            cnx.commit()
 
             if cursor.rowcount != 0:
                 self.catalogo_prendas.pop(int(selected_item) - 1)
@@ -225,6 +231,9 @@ class FrmCatalogoPrendas(tk.Toplevel):
 
                 messagebox.showinfo(message='PRENDA ELIMINADA CORRECTAMENTE!!', title='Eliminar prenda del catálogo')
                 self.obtener_prendas()
+
+            cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 
@@ -244,18 +253,22 @@ class FrmCatalogoPrendas(tk.Toplevel):
 
     def obtener_prendas(self, *args):
 
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
+
         texto_buscar = self.buscar.get()
 
         # Limpiar la tabla
         for i in self.tabla_catalogo.get_children():
             self.tabla_catalogo.delete(i)
 
-        if self.cnx.is_connected():
+        if cnx.is_connected():
             if texto_buscar == '':
 
                 print(".....OBTENIENDO PRENDAS DEL CATÁLOGO.....")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 # Llama al proceso almacenado
                 cursor.callproc('spObtenerPrendas')
@@ -269,12 +282,14 @@ class FrmCatalogoPrendas(tk.Toplevel):
                     self.tabla_catalogo.insert("", 'end', iid=i, values=prenda)
                     i += 1
 
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
 
             else:
                 print(".....OBTENIENDO PRENDAS DEL CATÁLOGO.....")
 
-                cursor = self.cnx.cursor()
+                cursor = cnx.cursor()
 
                 argument = [texto_buscar]
                 # Llama al proceso almacenado
@@ -289,7 +304,10 @@ class FrmCatalogoPrendas(tk.Toplevel):
                     self.tabla_catalogo.insert("", 'end', iid=i, values=prenda)
                     i += 1
 
-                self.cnx.commit()
+                cnx.commit()
+
+                cursor.close()
+            cnx.close()
         else:
             print("Connection failure")
 
@@ -311,34 +329,41 @@ class FrmCatalogoPrendas(tk.Toplevel):
     # Función para obtener el tipo de servicio
     def obtener_servicios(self):
 
-            lista_servicios = []
+        # Conexión a la base de datos Azul lavandería
+        db = dbConnection()
+        cnx = db.cnx
 
-            if self.cnx.is_connected():
+        lista_servicios = []
 
-                print("Esperando para obtener prendas")
+        if cnx.is_connected():
 
-                cursor = self.cnx.cursor()
+            print("Esperando para obtener prendas")
 
-                # Llama al proceso almacenado
-                cursor.callproc('spObtenerServicios')
+            cursor = cnx.cursor()
 
-                for result in cursor.stored_results():
-                    lista_servicios = result.fetchall()
-                    print(lista_servicios)
+            # Llama al proceso almacenado
+            cursor.callproc('spObtenerServicios')
 
-                i = 1
+            for result in cursor.stored_results():
+                lista_servicios = result.fetchall()
+                print(lista_servicios)
 
-                self.servicios = []
+            i = 1
 
-                for servicio in lista_servicios:
-                    self.servicios.append(servicio)
+            self.servicios = []
+
+            for servicio in lista_servicios:
+                self.servicios.append(servicio)
                 print(self.servicios)
 
-                # Ejecutar el proceso almacenadoe
-                self.cnx.commit()
+            # Ejecutar el proceso almacenadoe
+            cnx.commit()
 
-            else:
-                print("Connection failure")
+            cursor.close()
+            cnx.close()
+
+        else:
+            print("Connection failure")
 
     def upper_descripcion(self, *args):
         self.descripcion_prenda.set(self.descripcion_prenda.get().upper())  # change to Upper case

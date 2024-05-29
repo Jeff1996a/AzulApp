@@ -12,6 +12,7 @@ from datetime import date, datetime
 from Gastos.FrmRegistroGastos import FrmRegistroGastos
 from Model.Usuario import Usuario
 from OrdenTrabajo.FrmActualizarOrden import ActualizarOrden
+from OrdenTrabajo.FrmOrdenesCliente import FrmOrdenesCliente
 from OrdenTrabajo.FrmOrdenesGeneradas import ListaOrdenes
 from OrdenTrabajo.FrmNuevaOrden import NuevaOrden
 from Producto.FrmInventarioProductos import FrmInventarioProductos
@@ -82,27 +83,24 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para actualizar datos del cliente
         self.menu_clientes.add_command(
             label="Actualizar datos cliente",
-            accelerator="Ctrl+A",
             command=self.actualizar_cliente
         )
 
         # Opción para ver clientes registrados
         self.menu_clientes.add_command(
             label="Clientes registrados",
-            accelerator="Ctrl+L",
             command=self.clientes_registrados
         )
 
         # Opción para ingresar un nuevo cliente
         self.menu_clientes.add_command(
             label="Ingresar nuevo cliente",
-            accelerator="Ctrl+N",
             command=self.nuevo_cliente
         )
         # Opción para generar nueva orden
         self.menu_clientes.add_command(
             label="Ordenes por cliente",
-            accelerator="Ctrl+T"
+            command=self.ordenes_cliente
         )
 
         # Menú de ordenes de trabajo
@@ -111,21 +109,18 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para buscar un cliente
         self.menu_ordenes.add_command(
             label="Nueva orden de trabajo",
-            accelerator="Ctrl+O",
             command=self.generar_orden
         )
 
         # Opción para buscar un cliente
         self.menu_ordenes.add_command(
             label="Ordenes de trabajo generadas",
-            accelerator="Ctrl+O",
             command=self.ordenes_generadas
         )
 
         # Opción para registrar una entrega
         self.menu_ordenes.add_command(
             label="Registrar entrega",
-            accelerator="Ctrl+E",
             command=self.registrar_entrega
         )
         # Menú de gastos
@@ -134,7 +129,6 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para registrar nuevo gasto
         self.menu_gastos.add_command(
             label="Control de gastos",
-            accelerator="Ctrl+L",
             command=self.control_gastos
         )
 
@@ -144,7 +138,6 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para generar el reporte de ventas
         self.menu_reportes.add_command(
             label="Reporte de cierre caja",
-            accelerator="Ctrl+X",
             command=self.abrir_reportes
 
         )
@@ -152,7 +145,6 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para visualizar el registro de conexion a cajas
         self.menu_reportes.add_command(
             label="Historial usuarios conectados",
-            accelerator="Ctrl+X",
             command=self.abrir_historial
 
         )
@@ -163,21 +155,18 @@ class MenuPrincipal(tk.Toplevel):
         # Opción para agregar una prenda a inventario
         self.menu_inventario.add_command(
             label="Inventario de ropa",
-            accelerator="Ctrl+I",
             command=self.inventario_ropa
         )
 
         # Opción para buscar un item
         self.menu_inventario.add_command(
             label="Inventario de productos",
-            accelerator="Ctrl+M",
             command=self.inventario_productos
         )
 
         # Opción para buscar un item
         self.menu_inventario.add_command(
             label="Catálogo de prendas",
-            accelerator="Ctrl+C",
             command=self.abrir_catalogo
         )
 
@@ -260,6 +249,9 @@ class MenuPrincipal(tk.Toplevel):
         self.lblQuestion.pack(side='top', anchor='center', padx=15, pady=20)
 
         self.time()
+
+        # Nos permite cerrar la sesión al momento de cerra la ventana
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_sesion)
 
         self.focus()
         self.grab_set()
@@ -367,7 +359,7 @@ class MenuPrincipal(tk.Toplevel):
 
     def abrir_reportes(self):
         frm_registro_pagos = FrmRegistroPagos(self.datos_usuario)
-        frm_registro_pagos.wm_maxsize(width=1230, height=770)
+        frm_registro_pagos.wm_maxsize(width=1250, height=770)
 
     def control_gastos(self):
         frmRegistroGastos = FrmRegistroGastos(self.datos_usuario)
@@ -380,3 +372,6 @@ class MenuPrincipal(tk.Toplevel):
 
     def abrir_catalogo(self):
         frm_catalogo_prendas = FrmCatalogoPrendas(self.datos_usuario)
+
+    def ordenes_cliente(self):
+        frm_ordenes_cliente = FrmOrdenesCliente(self.datos_usuario)

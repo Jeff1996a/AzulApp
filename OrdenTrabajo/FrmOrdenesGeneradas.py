@@ -260,6 +260,9 @@ class ListaOrdenes(tk.Toplevel):
 
     # Filtar los datos de la fecha
     def filtrar_tablas(self):
+
+        orden_obtenida = []
+
         # Conexión a la base de datos Azul lavandería
         db = dbConnection()
         cnx = db.cnx
@@ -348,7 +351,6 @@ class ListaOrdenes(tk.Toplevel):
             print('ORDENES GENERADAS: ' + str(self.total_ordenes))
             print('ORDENES PENDIENTES: ' + str(self.total_pendientes))
             print('ORDENES ENTREGADAS: ' + str(self.total_entregadas))
-
 
             cnx.commit()
 
