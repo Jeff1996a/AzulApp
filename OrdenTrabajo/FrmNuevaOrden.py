@@ -1,11 +1,15 @@
 import datetime
 import tkinter as tk
+import win32print
+import win32ui
+import win32api
+import os
 from tkinter import ttk, messagebox
 from PIL import ImageTk, Image
 from tkcalendar import *
 from datetime import date
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from fpdf import FPDF
+
 
 from dbConnection import dbConnection
 
@@ -697,7 +701,7 @@ class NuevaOrden(tk.Toplevel):
 
                         self.contador_prendas += 1
 
-                        prenda = (tipo_prenda, tipo_servicio, cantidad, round(precio, 2), round(precio * float(cantidad)), observacion )
+                        prenda = (tipo_prenda, tipo_servicio, cantidad, round(precio, 2), round(precio * float(cantidad),2), observacion )
 
                         self.prendas_agregadas.append(prenda)
 
@@ -777,7 +781,7 @@ class NuevaOrden(tk.Toplevel):
                             self.contador_prendas += 1
 
                             prenda = (
-                                tipo_prenda, tipo_servicio, cantidad, round(precio, 2), round(precio * float(cantidad)),
+                                tipo_prenda, tipo_servicio, cantidad, round(precio, 2), round(precio * float(cantidad),2),
                                 observacion)
 
                             self.prendas_agregadas.append(prenda)
@@ -1058,8 +1062,6 @@ class NuevaOrden(tk.Toplevel):
 
                     messagebox.showinfo(message='ORDEN REGISTRADA EXITOSAMENTE!!', title='Generar nueva orden')
 
-
-
                     self.destroy()
 
                     cnx.close()
@@ -1067,6 +1069,7 @@ class NuevaOrden(tk.Toplevel):
                 # Obtener empleado a cargo
                 print('***** EMPLEADO A CARGO *****')
                 print('Id usuario: ' + str(self.datos_usuario.id))
+
                 self.generar_pdf()
 
     # Obtener el nuevo número de orden
@@ -1305,28 +1308,56 @@ class NuevaOrden(tk.Toplevel):
         direccion = self.direccion.get()
         telefono = self.telefono.get()
 
-        canvas = Canvas('prueba.pdf', pagesize=(595.44, 311.76))
+        # Crear el pdf
+        pdf = FPDF(orientation="P", unit="cm", format="A4")
+        pdf.set_font("helvetica", "", 7)
+        pdf.add_page()
+        pdf.cell(19, 0.5, "", border=1, ln=1)
+        pdf.cell(9, 0.5, "", border=1)
+        pdf.cell(6, 0.5, fecha_pedido, border=1, ln=1)
+        pdf.cell(9, 0.5, "", border=1)
+        pdf.cell(6, 0.5, fecha_entrega, border=1, ln=1)
+        pdf.cell(9, 0.5, "", border=1)
+        pdf.cell(9, 0.5, nombres_cliente, border=1)
+        pdf.cell(2, 0.5, cedula, border=1, ln=1)
+        pdf.cell(9, 0.5, "", border=1)
+        pdf.cell(9, 0.5, direccion, border=1)
+        pdf.cell(2, 0.5, telefono, border=1, ln=1)
+        pdf.cell(19, 0.5, "", border=1, ln=1)
 
-        canvas.setFont('Helvetica',8)
+        table_data = []
 
-        canvas.drawString(270.0, 270.0, fecha_pedido)
-        canvas.drawString(270.0, 260.0, fecha_entrega)
-        canvas.drawString(270.0, 250.0, nombres_cliente)
-        canvas.drawString(270.0, 240.0, direccion)
-        canvas.drawString(520.08, 250.0, cedula)
-        canvas.drawString(520.08, 240.0, telefono)
+        for prenda in self.prendas_agregadas:
+            cadena = [str(item) for item in prenda]
+            table_data.append(cadena)
+        print(table_data)
 
-        pos_x = 10
-        pos_y = 500.08
-
-        if len(self.prendas_agregadas) != 0:
-
-            print('....AGREGANDO PRENDAS A FACTURA......')
-
-            for prenda in self.prendas_agregadas:
-                print(prenda)
-
-            t = Table(self.prendas_agregadas)
+        # Posicionar cada item en la factura
+        for item in table_data:
+            pdf.cell(1, 0.5, item[2], border=1)
+            pdf.cell(8,0.5, item[0], border=1)
+            pdf.cell(7, 0.5, item[5], border=1)
+            pdf.cell(2,0.5, item[3], border=1)
+            pdf.cell(2,0.5, item[4], border=1, ln=1)
 
 
-        canvas.save()
+        total_orden = self.total.get()
+        observacion = self.observacion_general.get()
+
+        pdf.set_xy(19, 8)
+        pdf.cell(2, 0.5, str(total_orden), border=1, ln=1)
+        pdf.set_xy(15, 8.5)
+        pdf.cell(6, 0.7, observacion , border=1, ln=1)
+
+        pdf.output("factura.pdf")
+
+        # Imprimir pdf orden de trabajo generada
+        pdf_filename = 'factura.pdf'
+
+        # Imprime el pdf del formato para orden generadas
+        os.startfile(pdf_filename,'print')
+
+
+
+
+
